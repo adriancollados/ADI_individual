@@ -1,0 +1,83 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="lista.css"/>
+</head>
+<body>
+    <div id="app">
+        <lista/>
+    </div>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="servicios/clienteAPI.js"></script>
+    <script>
+        const app = Vue.createApp({})
+        app.component('lista', {
+            data: function(){
+                return{
+                    lista: []
+                }
+            },
+            created: async function(){
+                var c = new ClienteAPI('http://localhost:3000/items')
+                var items = await c.getItems()
+                this.lista = items;
+
+            },
+            methods: {
+                cambiarItem: async function(id){
+                    var encontrado = this.list.find(function(elem){
+                        return elem.id == id;
+                    })
+                    if(encontrado){
+                        encontrado.comprado = !encontrado.comprado
+                        var c = new ClienteAPI('http://localhost:3000/items')
+                        await c.toggleItem(encontrado.id, encontrado.comprado)
+                    }
+                },
+                nuevoItem: async function(nombre){
+                    var c = new ClienteAPI('http://localhost:3000/items')
+                    var nuevo = await c.addItem(nombre)
+                    this.lista.push(nuevo)
+                }
+
+            },
+            template: `
+                <h1> Lista de compras </h1>
+                <nuevo-item
+                    @nuevo="nuevoItem"/>
+                <ul>
+                    <item v-for="item in lista" 
+                        v-bind:nombre="item.nombre" 
+                        :id="item.id"
+                        :comprado="item.comprado"
+                        @toggle="cambiarItem"
+                        />
+                </ul>
+            `
+            //v-bind se puede poner solo con los dos puntos
+        })
+        app.component('item', {
+            props:["id", "nombre", "comprado"],
+            template: `
+                <li :class="{tachado : comprado}" @click="$emit('toggle', id)"> 
+                    {{nombre}} 
+                </li>
+            `
+        })
+
+        app.component('nuevo-item', {
+            data: function(){
+                return{
+                    texto: ""
+                }
+            },
+            template: `
+                <input type="text" v-model="texto"/>
+                <button @click="$emit('nuevo', texto)"> Insertar </button>
+            `
+        })
+
+        app.mount('#app')
+    </script>
+</body>
+</html>
